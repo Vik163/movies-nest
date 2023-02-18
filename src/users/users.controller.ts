@@ -1,13 +1,34 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  Req,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { Query } from 'mongoose';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserItem } from './interfaces/user.interface';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { IdUserRequest, UserItem } from './interfaces/user.interface';
 import { UsersService } from './users.service';
 
-@Controller()
+@Controller('users/me')
 export class UsersController {
   constructor(private readonly usersServive: UsersService) {}
-  @Post('signup')
-  createUser(@Body() createUserDto: CreateUserDto): Promise<UserItem> {
-    return this.usersServive.createUser(createUserDto);
+
+  @UseGuards(JwtAuthGuard)
+  @Get()
+  getUser(@Req() req: IdUserRequest): Promise<UserItem> {
+    return this.usersServive.getUser(req);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Patch()
+  updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: IdUserRequest) {
+    return this.usersServive.updateUser(updateUserDto, req);
   }
 }

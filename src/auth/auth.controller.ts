@@ -1,12 +1,18 @@
-import { Controller, Request, Post, UseGuards } from '@nestjs/common';
+import { Controller, Request, Post, Body } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { UserItem } from 'src/users/interfaces/user.interface';
 
 @Controller()
-export class AuthController {
+export default class AuthController {
+  usersServive: any;
   constructor(private authService: AuthService) {}
 
-  // @UseGuards(AuthGuard('local'))
+  @Post('signup')
+  createUser(@Body() createUserDto: CreateUserDto): Promise<UserItem> {
+    return this.usersServive.createUser(createUserDto);
+  }
+
   @Post('signin')
   async login(@Request() req) {
     return this.authService.login(req.body);
