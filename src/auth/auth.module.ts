@@ -16,7 +16,7 @@ const { NODE_ENV, JWT_SECRET } = process.env;
 @Module({
   imports: [
     PassportModule,
-    forwardRef(() => UsersModule),
+    forwardRef(() => UsersModule), // Убераем круговую зависимость
     JwtModule.register({
       secret: NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
       signOptions: { expiresIn: '7d' },
