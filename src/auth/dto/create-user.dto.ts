@@ -1,7 +1,7 @@
 import * as Joi from 'joi';
 import validator from 'validator';
 
-export const UpdateUserSchema: any = Joi.object({
+export const CreateUserSchema = Joi.object({
   name: Joi.string().required().min(2).max(30),
   email: Joi.string()
     .required()
@@ -9,11 +9,13 @@ export const UpdateUserSchema: any = Joi.object({
       if (validator.isEmail(value)) {
         return value;
       }
-      return helpers.error('Ошибка');
+      return helpers.message({ custom: 'Поле email заполнено некорректно' });
     }),
+  password: Joi.string().alphanum().required().min(6),
 });
 
-export class UpdateUserDto {
+export class CreateUserDto {
   readonly name: string;
   readonly email: string;
+  readonly password: string;
 }

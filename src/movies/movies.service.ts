@@ -1,11 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 
 import { Movies, MoviesDocument } from './schemas/movies.schema';
 import { MoviesType } from './interfaces/movies.interface';
 import { CreateMovieDto } from './dto/create-movie.dto';
-import { IdUserRequest } from 'src/users/interfaces/user.interface';
 
 @Injectable()
 export class MoviesService {
@@ -13,19 +12,32 @@ export class MoviesService {
     @InjectModel(Movies.name) private moviesModel: Model<MoviesDocument>,
   ) {}
 
+  //Получить сохраненные карточки -------------------------
   async getSaveMovies(): Promise<MoviesType[]> {
     return await this.moviesModel.find();
   }
 
-  async addCard(card: CreateMovieDto, req: IdUserRequest): Promise<MoviesType> {
+  //Сохранить карточку добавляя id пользователя ------------------------
+  async addCard(card: CreateMovieDto, userId: string): Promise<MoviesType> {
     const cardSave = await this.moviesModel.create({
       ...card,
-      owner: req.user._id,
+      owner: userId,
     });
     return cardSave;
   }
 
-  async deleteCard(id: string): Promise<MoviesType> {
-    return await this.moviesModel.findByIdAndDelete(id);
+  //Удалить карточку по id карты и id пользователя --------------
+  async deleteCard(id: string, userId: string): Promise<MoviesType> {
+    const deleteCard = await this.moviesModel.findOneAndDelete({
+      _id: id,
+      owner: userId,
+    });
+    if (!deleteCard) {
+      throw new HttpException(
+        'Карточка или пользователь не найдены',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return deleteCard;
   }
 }

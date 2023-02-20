@@ -31,28 +31,28 @@ export class MoviesController {
   }
 
   //Получаем сохраненные карточки ----------------
-  @UseGuards(JwtAuthGuard) //Защита авторизации
+  @UseGuards(JwtAuthGuard) //Проверка авторизации
   @Get('movies')
   async getSaveMovies(): Promise<MoviesType[]> | null {
     return this.moviesService.getSaveMovies();
   }
 
   //Сохраняем карту ----------------------------------
-  @UsePipes(new ValidationPipe(CreateMovieSchema))
+  @UsePipes(new ValidationPipe(CreateMovieSchema)) //Валидация
   @UseGuards(JwtAuthGuard)
   @Post('movies')
   async addCard(@Body() card: CreateMovieDto, @Req() req: IdUserRequest) {
-    return this.moviesService.addCard(card, req);
+    return this.moviesService.addCard(card, req.user._id);
   }
 
-  //Удаляем карту по id ----------------------------------
+  //Удалить карточку по id карты и id пользователя --------------
   @UseGuards(JwtAuthGuard)
   @Delete('movies/:id')
   async deleteCard(
+    // Валидация id переданного в параметре -----------------------
     @Param('id', new ValidationPipe(DeleteMovieSchema)) id: string,
+    @Req() req: IdUserRequest,
   ): Promise<MoviesType> {
-    console.log('i');
-
-    return this.moviesService.deleteCard(id);
+    return this.moviesService.deleteCard(id, req.user._id);
   }
 }

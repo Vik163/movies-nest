@@ -2,8 +2,7 @@ import {
   PipeTransform,
   Injectable,
   ArgumentMetadata,
-  HttpException,
-  HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { ObjectSchema } from 'joi';
 import { ValidationException } from 'src/exceptions/validation.exception';
@@ -21,7 +20,7 @@ export class ValidationPipe implements PipeTransform {
         throw new ValidationException(message);
       } else {
         //ответ на ошибку id
-        throw new HttpException('Плохой запрос', HttpStatus.BAD_REQUEST);
+        throw new BadRequestException('Плохой запрос');
       }
     }
     return value;

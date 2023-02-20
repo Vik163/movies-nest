@@ -2,18 +2,14 @@ import {
   Body,
   Controller,
   Get,
-  Param,
   Patch,
-  Post,
-  Put,
   Req,
-  Request,
   UseGuards,
+  UsePipes,
 } from '@nestjs/common';
-import { Query } from 'mongoose';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { ValidationPipe } from 'src/pipes/validation.pipe';
+import { UpdateUserDto, UpdateUserSchema } from './dto/update-user.dto';
 import { IdUserRequest, UserItem } from './interfaces/user.interface';
 import { UsersService } from './users.service';
 
@@ -21,14 +17,18 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private readonly usersServive: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
+  //Получить пользователя --------------------------------------
+  @UseGuards(JwtAuthGuard) // Проверка авторизации
   @Get()
   getUser(@Req() req: IdUserRequest): Promise<UserItem> {
-    return this.usersServive.getUser(req);
+    return this.usersServive.getUser(req.user._id);
   }
+
+  //Обновить пользователя ---------------------------------------
   @UseGuards(JwtAuthGuard)
+  @UsePipes(new ValidationPipe(UpdateUserSchema)) // Валидация
   @Patch()
   updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: IdUserRequest) {
-    return this.usersServive.updateUser(updateUserDto, req);
+    return this.usersServive.updateUser(updateUserDto, req.user._id);
   }
 }
