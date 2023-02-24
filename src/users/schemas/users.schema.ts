@@ -1,6 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-import { IsEmail } from 'class-validator';
 
 export type UserDocument = User & Document;
 
@@ -11,14 +10,14 @@ export class User {
   @Prop({
     required: true,
     unique: true,
-    validate: {
-      validator: (v) => IsEmail(v),
-      message: 'Неправильный формат почты',
-    },
   })
   email: string;
   @Prop({ required: true, select: false })
   password: string;
+  @Prop({ default: false })
+  isActivated: boolean;
+  @Prop()
+  activationLink: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

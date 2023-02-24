@@ -3,12 +3,16 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { User, UserSchema } from '../users/schemas/users.schema';
+import { Token, TokenShema } from './schemas/token.schema';
+
 import { AuthService } from './auth.service';
 import AuthController from './auth.controller';
 import { UsersService } from 'src/users/users.service';
 import * as dotenv from 'dotenv';
 import { LocalStrategy } from './local.auth';
 import { UsersModule } from 'src/users/users.module';
+import { TokensService } from './tokens.service';
+import { MailService } from './mail.service';
 dotenv.config();
 
 const { NODE_ENV, JWT_SECRET } = process.env;
@@ -22,8 +26,15 @@ const { NODE_ENV, JWT_SECRET } = process.env;
       signOptions: { expiresIn: '7d' },
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([{ name: Token.name, schema: TokenShema }]),
   ],
-  providers: [LocalStrategy, AuthService, UsersService],
+  providers: [
+    LocalStrategy,
+    AuthService,
+    UsersService,
+    TokensService,
+    MailService,
+  ],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })
