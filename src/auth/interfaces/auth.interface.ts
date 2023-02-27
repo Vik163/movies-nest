@@ -6,6 +6,6 @@ export interface UserType {
 }
 
 export interface CreateUserType {
-  tokens: { readonly accessToken: string; readonly refreshToken: string };
+  readonly accessToken: string;
   user: UserType;
 }

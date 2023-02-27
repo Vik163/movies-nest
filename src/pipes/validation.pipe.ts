@@ -5,7 +5,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { ObjectSchema } from 'joi';
-import { ValidationException } from 'src/exceptions/validation.exception';
 
 @Injectable()
 export class ValidationPipe implements PipeTransform {
@@ -17,7 +16,7 @@ export class ValidationPipe implements PipeTransform {
       if (error.details[0].path[0]) {
         const message = `Поле '${error.details[0].path}' заполнено некорректно`;
 
-        throw new ValidationException(message);
+        throw new BadRequestException(message);
       } else {
         //ответ на ошибку id
         throw new BadRequestException('Плохой запрос');

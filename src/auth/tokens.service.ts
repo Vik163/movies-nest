@@ -29,12 +29,19 @@ export class TokensService {
 
   // Сохраняем токен в БД ---------------------------------
   async saveToken(userId, refreshToken) {
+    // - Проверка наличия токена ---
     const tokenData = await this.tokenModel.findOne({ user: userId });
     if (tokenData) {
       tokenData.refreshToken = refreshToken;
       return tokenData.save();
     }
+    // - Если отсутствует, то создаем ---
     const token = await this.tokenModel.create({ user: userId, refreshToken });
     return token;
+  }
+
+  async removeToken(refreshToken) {
+    const tokenData = await this.tokenModel.deleteOne({ refreshToken });
+    return tokenData;
   }
 }

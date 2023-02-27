@@ -9,7 +9,6 @@ import { AuthService } from './auth.service';
 import AuthController from './auth.controller';
 import { UsersService } from 'src/users/users.service';
 import * as dotenv from 'dotenv';
-import { LocalStrategy } from './local.auth';
 import { UsersModule } from 'src/users/users.module';
 import { TokensService } from './tokens.service';
 import { MailService } from './mail.service';
@@ -28,13 +27,7 @@ const { NODE_ENV, JWT_SECRET } = process.env;
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Token.name, schema: TokenShema }]),
   ],
-  providers: [
-    LocalStrategy,
-    AuthService,
-    UsersService,
-    TokensService,
-    MailService,
-  ],
+  providers: [AuthService, UsersService, TokensService, MailService],
   controllers: [AuthController],
   exports: [AuthService, JwtModule],
 })

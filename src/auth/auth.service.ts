@@ -4,7 +4,7 @@ import {
   HttpStatus,
   Injectable,
   InternalServerErrorException,
-  NotAcceptableException,
+  NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -30,23 +30,48 @@ export class AuthService {
     private mailService: MailService,
   ) {}
 
-  async validateUser(
+  private async validateUser(
     email: string,
     password: string,
   ): Promise<UserType> | null {
     const user = await this.userModel.findOne({ email }).select('+password');
-    if (!user) return null;
-    const passwordValid = await bcrypt.compare(password, user.password);
-
+    // if (!user) return null;
     if (!user) {
-      throw new NotAcceptableException('could not find the user');
+      throw new NotFoundException('Пользователь с таким email не найден');
+    }
+    const passwordValid = await bcrypt.compare(password, user.password);
+    if (!passwordValid) {
+      throw new NotFoundException('Неверный пароль');
     }
     if (user && passwordValid) {
-      return user;
+      return {
+        isActivated: user.isActivated,
+        name: user.name,
+        email: user.email,
+        _id: user._id,
+      };
     }
     return null;
   }
 
+  // Отправляем данные пользователя -------------------------
+  private async sendUserData(user, res) {
+    const tokens = this.tokenService.createTokens(user);
+
+    // - Сохраняем refreshToken в cookie ---
+    const tokenRefresh = tokens.refreshToken;
+    res.cookie('refreshToken', tokenRefresh, {
+      maxAge: 3600000 * 24 * 30,
+      httpOnly: true,
+    });
+    // - Сохраняем refreshToken в БД ---
+    await this.tokenService.saveToken(user._id, tokenRefresh);
+    const accessToken = tokens.accessToken;
+
+    return { user, accessToken };
+  }
+
+  // Регитрация -----------------------------------------------
   public async createUser(
     createUserDto: CreateUserDto,
     res: Response,
@@ -55,25 +80,24 @@ export class AuthService {
     const { email } = createUserDto;
     const candidate = await this.userModel.findOne({ email });
     if (candidate) {
-      throw new Error(`Пользователь с ${email} уже существует`);
+      throw new ConflictException(`Пользователь с ${email} уже существует`);
     }
     // - Хешируем пароль ---
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
-    // Подтверждение аутентификации через почту яндекса ------------
-    const activationLink = uuid.v4(); // Ссылка для параметра
-    await this.mailService.sendActivationMail(
-      email,
-      `${process.env.API_URL}/activate/${activationLink}`,
-    );
+    // - Запрос аутентификации через почту яндекса ---
+    const activationLink: string = uuid.v4(); // - ссылка для параметра ---
+    // await this.mailService.sendActivationMail(
+    //   email,
+    //   `${process.env.API_URL}/activate/${activationLink}`,
+    // );
 
     // - Записываем пользователя в БД и получаем его ---
-    await new this.userModel({
+    const user = await new this.userModel({
       ...createUserDto,
       password: hashedPassword,
       activationLink,
     }).save();
-    const user = await this.userModel.findOne({ email });
 
     // - Создаем токены с записанным payload ---
     const payload = user && {
@@ -81,53 +105,41 @@ export class AuthService {
       id: user._id,
       name: user.name,
     };
-    const tokens = this.tokenService.createTokens(payload);
-
-    // - Сохраняем refreshToken в cookie ---
-    const tokenRefresh = tokens.refreshToken;
-    res.cookie('jwt', tokenRefresh, {
-      maxAge: 3600000 * 24 * 30,
-      httpOnly: true,
-    });
-
-    // - Сохраняем refreshToken в БД ---
-    await this.tokenService.saveToken(user._id, tokenRefresh);
-
-    return { user, tokens };
+    // - Отправляем данные пользователя ---
+    return await this.sendUserData(payload, res);
   }
 
+  // Подтверждение активации по ссылке через почту ---------------
   async activate(activationLink) {
     const user = await this.userModel.findOne({ activationLink });
     if (!user) {
-      console.log(activationLink);
-
-      throw new Error('Некорректная активация ссылки');
+      throw new HttpException(
+        'Некорректная активация ссылки',
+        HttpStatus.BAD_REQUEST,
+      );
     }
-    user.isActivated = true;
+    user.isActivated = true; // - меняем в БД флажок ---
     await user.save();
   }
 
+  // Аутентификация -------------------------------------------------------
   public async login(user: LoginUserDto, res: Response): Promise<object> {
     try {
+      // - Проверяем данные пользователя ---
       const payload = await this.validateUser(user.email, user.password);
       if (payload) {
-        const token = `Bearer ${this.jwtService.sign({ _id: payload._id })}`;
-        res.cookie('jwt', token, {
-          maxAge: 3600000 * 24 * 7,
-          httpOnly: true,
-        });
-
-        return {
-          // token: `Bearer ${this.jwtService.sign({ _id: payload._id })}`,
-          user: {
-            name: payload.name,
-            email: payload.email,
-            _id: payload._id,
-          },
-        };
+        // - Отправляем данные пользователя ---
+        return await this.sendUserData(payload, res);
       }
     } catch (e) {
       throw new InternalServerErrorException('Ошибка сервера');
     }
+  }
+
+  public async logout(res, req) {
+    const { refreshToken } = req.cookies;
+    const token = await this.tokenService.removeToken(refreshToken);
+    res.clearCookie('refreshToken');
+    res.json(token);
   }
 }
