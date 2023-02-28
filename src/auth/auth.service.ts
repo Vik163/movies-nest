@@ -1,81 +1,37 @@
 import {
   ConflictException,
-  HttpException,
-  HttpStatus,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import * as uuid from 'uuid';
 
-import { UsersService } from '../users/users.service';
 import { User, UserDocument } from 'src/users/schemas/users.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { TokensService } from './tokens.service';
-import { CreateUserType, UserType } from './interfaces/auth.interface';
+import { ICreateUser, IUser } from './interfaces/auth.interface';
 import { MailService } from './mail.service';
+import { UtilsAuthService } from './utils-auth.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService,
+    private utilsAuthService: UtilsAuthService,
     private tokenService: TokensService,
     private mailService: MailService,
   ) {}
 
-  private async validateUser(
-    email: string,
-    password: string,
-  ): Promise<UserType> | null {
-    const user = await this.userModel.findOne({ email }).select('+password');
-    // if (!user) return null;
-    if (!user) {
-      throw new NotFoundException('Пользователь с таким email не найден');
-    }
-    const passwordValid = await bcrypt.compare(password, user.password);
-    if (!passwordValid) {
-      throw new NotFoundException('Неверный пароль');
-    }
-    if (user && passwordValid) {
-      return {
-        isActivated: user.isActivated,
-        name: user.name,
-        email: user.email,
-        _id: user._id,
-      };
-    }
-    return null;
-  }
-
-  // Отправляем данные пользователя -------------------------
-  private async sendUserData(user, res) {
-    const tokens = this.tokenService.createTokens(user);
-
-    // - Сохраняем refreshToken в cookie ---
-    const tokenRefresh = tokens.refreshToken;
-    res.cookie('refreshToken', tokenRefresh, {
-      maxAge: 3600000 * 24 * 30,
-      httpOnly: true,
-    });
-    // - Сохраняем refreshToken в БД ---
-    await this.tokenService.saveToken(user._id, tokenRefresh);
-    const accessToken = tokens.accessToken;
-
-    return { user, accessToken };
-  }
-
-  // Регитрация -----------------------------------------------
+  // Регитрация =======================================================
   public async createUser(
     createUserDto: CreateUserDto,
     res: Response,
-  ): Promise<CreateUserType> {
+  ): Promise<ICreateUser> {
     // - Проверяем на конфликт email ---
     const { email } = createUserDto;
     const candidate = await this.userModel.findOne({ email });
@@ -86,57 +42,74 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
     // - Запрос аутентификации через почту яндекса ---
-    const activationLink: string = uuid.v4(); // - ссылка для параметра ---
-    // await this.mailService.sendActivationMail(
-    //   email,
-    //   `${process.env.API_URL}/activate/${activationLink}`,
-    // );
+    const activationLink = uuid.v4(); // - ссылка для параметра ---
+    await this.mailService.sendActivationMail(
+      email,
+      `${process.env.API_URL}/activate/${activationLink}`,
+    );
 
     // - Записываем пользователя в БД и получаем его ---
-    const user = await new this.userModel({
+    const user: IUser = await new this.userModel({
       ...createUserDto,
       password: hashedPassword,
       activationLink,
     }).save();
 
-    // - Создаем токены с записанным payload ---
-    const payload = user && {
-      email: user.email,
-      id: user._id,
+    // - Создаем данные пользователя с нужными полями и отправляем ---
+    const userPayload = user && {
       name: user.name,
+      email: user.email,
+      _id: user._id,
+      isActivated: user.isActivated,
     };
-    // - Отправляем данные пользователя ---
-    return await this.sendUserData(payload, res);
+    return await this.utilsAuthService.sendUserData(userPayload, res);
   }
 
-  // Подтверждение активации по ссылке через почту ---------------
-  async activate(activationLink) {
-    const user = await this.userModel.findOne({ activationLink });
-    if (!user) {
-      throw new HttpException(
-        'Некорректная активация ссылки',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    user.isActivated = true; // - меняем в БД флажок ---
-    await user.save();
-  }
-
-  // Аутентификация -------------------------------------------------------
-  public async login(user: LoginUserDto, res: Response): Promise<object> {
+  // Аутентификация ======================================================
+  public async login(user: LoginUserDto, res: Response): Promise<ICreateUser> {
     try {
       // - Проверяем данные пользователя ---
-      const payload = await this.validateUser(user.email, user.password);
+      const payload: IUser = await this.utilsAuthService.validateUser(
+        user.email,
+        user.password,
+      );
+
       if (payload) {
         // - Отправляем данные пользователя ---
-        return await this.sendUserData(payload, res);
+        return await this.utilsAuthService.sendUserData(payload, res);
       }
     } catch (e) {
       throw new InternalServerErrorException('Ошибка сервера');
     }
   }
 
-  public async logout(res, req) {
+  // Обновление токенов ===========================================
+  async refresh(req: Request): Promise<ICreateUser> {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) {
+      throw new UnauthorizedException('Пользователь не авторизован');
+    }
+    // - Получаем данные из токена ---
+    const payload = await this.tokenService.validateRefreshToken(refreshToken);
+    // - Проверяем токен в БД ---
+    const tokenFromDb = await this.tokenService.findToken(refreshToken);
+    if (!payload || !tokenFromDb) {
+      throw new UnauthorizedException('Пользователь не авторизован');
+    }
+    // - Получаем данные пользователя с возможными изменениями ---
+    const user: IUser = await this.userModel.findById(payload._id);
+    const userPayload = user && {
+      name: user.name,
+      email: user.email,
+      _id: user._id,
+      isActivated: user.isActivated,
+    };
+    // - Создаем токены ---
+    const tokens = await this.tokenService.createTokens(userPayload);
+    return { ...tokens, user: userPayload };
+  }
+
+  public async logout(res: Response, req: Request): Promise<void> {
     const { refreshToken } = req.cookies;
     const token = await this.tokenService.removeToken(refreshToken);
     res.clearCookie('refreshToken');

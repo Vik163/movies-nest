@@ -1,16 +1,16 @@
-export interface UserItem {
+export interface IUserItem {
   readonly name: string;
   readonly email: string;
   readonly password?: string;
   readonly _id?: string;
 }
 
-export interface ReqUserType {
+export interface IReqUserType {
   _id: string;
   email: string;
 }
 
-export interface IdUserRequest extends Request {
-  user: ReqUserType;
+export interface IIdUserRequest extends Request {
+  user: IReqUserType;
   id: object;
 }

@@ -10,7 +10,7 @@ import {
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
 import { UpdateUserDto, UpdateUserSchema } from './dto/update-user.dto';
-import { IdUserRequest, UserItem } from './interfaces/user.interface';
+import { IIdUserRequest, IUserItem } from './interfaces/user.interface';
 import { UsersService } from './users.service';
 
 @Controller('users/me')
@@ -20,7 +20,7 @@ export class UsersController {
   //Получить пользователя --------------------------------------
   @UseGuards(JwtAuthGuard) // Проверка авторизации
   @Get()
-  getUser(@Req() req: IdUserRequest): Promise<UserItem> {
+  getUser(@Req() req: IIdUserRequest): Promise<IUserItem> {
     return this.usersServive.getUser(req.user._id);
   }
 
@@ -28,7 +28,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe(UpdateUserSchema)) // Валидация
   @Patch()
-  updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: IdUserRequest) {
+  updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: IIdUserRequest) {
     return this.usersServive.updateUser(updateUserDto, req.user._id);
   }
 }

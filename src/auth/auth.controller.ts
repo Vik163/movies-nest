@@ -14,13 +14,17 @@ import { AuthService } from './auth.service';
 import { CreateUserDto, CreateUserSchema } from 'src/auth/dto/create-user.dto';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
 import { LoginUserDto, LoginUserSchema } from './dto/login-user.dto';
-import { CreateUserType } from './interfaces/auth.interface';
+import { ICreateUser } from './interfaces/auth.interface';
 import { ErrorFilter } from 'src/filters/errors.filter';
+import { UtilsAuthService } from './utils-auth.service';
 
 @Controller()
 export default class AuthController {
   usersServive: any;
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private utilsAuthService: UtilsAuthService,
+  ) {}
 
   @UseFilters(new ErrorFilter())
   @UsePipes(new ValidationPipe(CreateUserSchema))
@@ -28,7 +32,7 @@ export default class AuthController {
   async createUser(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<CreateUserType> {
+  ): Promise<ICreateUser> {
     return this.authService.createUser(createUserDto, res);
   }
 
@@ -38,21 +42,30 @@ export default class AuthController {
   async login(
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
-  ) {
+  ): Promise<ICreateUser> {
     return this.authService.login(loginUserDto, res);
   }
 
-  // Подтверждение аутентификации через почту яндекса ------------
+  // Получение токенов с сервера -----------
+  @Get('token')
+  async refresh(@Req() req: Request): Promise<ICreateUser> {
+    return this.authService.refresh(req);
+  }
+
+  // Подтверждение с запросом по ссылке 'activate/:link'  через почту яндекса ===
   @Get('activate/:link')
   @UseFilters(new ErrorFilter())
-  async activate(@Param('link') link: string, @Res() res: Response) {
-    this.authService.activate(link);
+  async activate(
+    @Param('link') link: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    this.utilsAuthService.activate(link);
     return res.status(302).redirect(process.env.CLIENT_URL);
   }
 
   @Get('logout')
   @UseFilters(new ErrorFilter())
-  async logout(@Res() res: Response, @Req() req: Request) {
+  async logout(@Res() res: Response, @Req() req: Request): Promise<void> {
     return this.authService.logout(res, req);
   }
 }

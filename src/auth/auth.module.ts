@@ -12,6 +12,7 @@ import * as dotenv from 'dotenv';
 import { UsersModule } from 'src/users/users.module';
 import { TokensService } from './tokens.service';
 import { MailService } from './mail.service';
+import { UtilsAuthService } from './utils-auth.service';
 dotenv.config();
 
 const { NODE_ENV, JWT_SECRET } = process.env;
@@ -27,8 +28,14 @@ const { NODE_ENV, JWT_SECRET } = process.env;
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Token.name, schema: TokenShema }]),
   ],
-  providers: [AuthService, UsersService, TokensService, MailService],
+  providers: [
+    AuthService,
+    UsersService,
+    TokensService,
+    MailService,
+    UtilsAuthService,
+  ],
   controllers: [AuthController],
-  exports: [AuthService, JwtModule],
+  exports: [AuthService, JwtModule, TokensService],
 })
 export class AuthModule {}

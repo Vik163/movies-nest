@@ -18,4 +18,9 @@ export class CreateUserDto {
   readonly name: string;
   readonly email: string;
   readonly password: string;
+  constructor(model) {
+    this.name = model.name;
+    this.email = model.email;
+    this.password = model.password;
+  }
 }

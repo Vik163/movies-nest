@@ -1,13 +1,12 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
 
-// Подтверждение аутентификации через почту яндекса ------------
+// Подтверждение с запросом по ссылке 'activate/:link'  через почту яндекса ===
 @Injectable()
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
   // - link параметр запроса ---
-  public sendActivationMail(to, link): void {
+  public sendActivationMail(to: string, link: string): void {
     this.mailerService
       .sendMail({
         to: 'sfoto116@yandex.ru', // Временно, потом параметр to

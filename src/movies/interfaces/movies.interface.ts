@@ -1,6 +1,6 @@
 import { User } from 'src/users/schemas/users.schema';
 
-export interface MoviesType {
+export interface IMovies {
   readonly country: string;
   readonly director: string;
   readonly duration: number;

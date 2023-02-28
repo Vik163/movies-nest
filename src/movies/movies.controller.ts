@@ -15,8 +15,8 @@ import {
   CreateMovieSchema,
   DeleteMovieSchema,
 } from './dto/create-movie.dto';
-import { MoviesType } from './interfaces/movies.interface';
-import { IdUserRequest } from 'src/users/interfaces/user.interface';
+import { IMovies } from './interfaces/movies.interface';
+import { IIdUserRequest } from 'src/users/interfaces/user.interface';
 import { MoviesService } from './movies.service';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
 
@@ -33,7 +33,7 @@ export class MoviesController {
   //Получаем сохраненные карточки ----------------
   @UseGuards(JwtAuthGuard) //Проверка авторизации
   @Get('movies')
-  async getSaveMovies(): Promise<MoviesType[]> | null {
+  async getSaveMovies(): Promise<IMovies[]> | null {
     return this.moviesService.getSaveMovies();
   }
 
@@ -41,7 +41,7 @@ export class MoviesController {
   @UsePipes(new ValidationPipe(CreateMovieSchema)) //Валидация
   @UseGuards(JwtAuthGuard)
   @Post('movies')
-  async addCard(@Body() card: CreateMovieDto, @Req() req: IdUserRequest) {
+  async addCard(@Body() card: CreateMovieDto, @Req() req: IIdUserRequest) {
     return this.moviesService.addCard(card, req.user._id);
   }
 
@@ -51,8 +51,8 @@ export class MoviesController {
   async deleteCard(
     // Валидация id переданного в параметре -----------------------
     @Param('id', new ValidationPipe(DeleteMovieSchema)) id: string,
-    @Req() req: IdUserRequest,
-  ): Promise<MoviesType> {
+    @Req() req: IIdUserRequest,
+  ): Promise<IMovies> {
     return this.moviesService.deleteCard(id, req.user._id);
   }
 }
