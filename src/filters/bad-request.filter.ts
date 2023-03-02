@@ -6,9 +6,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 
+// Ловим ошибку неправильного адреса запроса ==============
 @Catch()
 export class BadRequestFilter implements ExceptionFilter {
-  catch(error: Error, host: ArgumentsHost) {
+  catch(error: Error, host: ArgumentsHost): Response {
     const response = host.switchToHttp().getResponse();
     if (error instanceof HttpException) {
       const status = error.getStatus();

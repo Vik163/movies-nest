@@ -1,20 +1,3 @@
-// import { HttpException, HttpStatus } from '@nestjs/common';
-
-// export class ErrorException extends HttpException {
-//   message: string;
-
-//   static UnauthorizedException() {
-//     return new ErrorException(
-//       'Пользователь не авторизован',
-//       HttpStatus.UNAUTHORIZED,
-//     );
-//   }
-
-//   static BadRequestException(message: string) {
-//     return new ErrorException(message, HttpStatus.BAD_REQUEST);
-//   }
-// }
-
 import {
   ExceptionFilter,
   Catch,
@@ -23,9 +6,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 
+// Ловим ошибки ====================================
 @Catch()
 export class ErrorFilter implements ExceptionFilter {
-  catch(error: Error, host: ArgumentsHost) {
+  catch(error: Error, host: ArgumentsHost): Response {
     const response = host.switchToHttp().getResponse();
     if (error instanceof HttpException) {
       const status = error.getStatus();

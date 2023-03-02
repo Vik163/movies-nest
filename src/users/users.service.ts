@@ -9,7 +9,7 @@ import { User, UserDocument } from './schemas/users.schema';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  //Получить пользователя --------------------------------------
+  //Получить пользователя =========================================
   async getUser(userId: string): Promise<IUserItem> {
     const currentUser = await this.userModel.findById(userId);
     if (!currentUser) {
@@ -18,8 +18,11 @@ export class UsersService {
     return currentUser;
   }
 
-  //Обновить пользователя ---------------------------------------
-  async updateUser(updateUserDto: UpdateUserDto, userId: string) {
+  //Обновить пользователя ========================================
+  async updateUser(
+    updateUserDto: UpdateUserDto,
+    userId: string,
+  ): Promise<IUserItem> {
     try {
       const updateUser = await this.userModel.findByIdAndUpdate(
         userId,

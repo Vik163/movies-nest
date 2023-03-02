@@ -8,7 +8,7 @@ import { UsersService } from './users.service';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    forwardRef(() => AuthModule),
+    forwardRef(() => AuthModule), // Убираем круговую зависимость --
   ],
   controllers: [UsersController],
   providers: [UsersService],

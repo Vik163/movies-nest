@@ -28,7 +28,10 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe(UpdateUserSchema)) // Валидация
   @Patch()
-  updateUser(@Body() updateUserDto: UpdateUserDto, @Req() req: IIdUserRequest) {
+  updateUser(
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: IIdUserRequest,
+  ): Promise<IUserItem> {
     return this.usersServive.updateUser(updateUserDto, req.user._id);
   }
 }

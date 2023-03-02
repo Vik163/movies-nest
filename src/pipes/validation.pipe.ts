@@ -6,11 +6,12 @@ import {
 } from '@nestjs/common';
 import { ObjectSchema } from 'joi';
 
+// Валидация запросов ===================================
 @Injectable()
 export class ValidationPipe implements PipeTransform {
   constructor(private schema: ObjectSchema) {}
 
-  async transform(value: any, metadata: ArgumentMetadata) {
+  async transform(value: Body, metadata: ArgumentMetadata): Promise<Body> {
     const { error } = await this.schema.validate(value);
     if (error) {
       if (error.details[0].path[0]) {

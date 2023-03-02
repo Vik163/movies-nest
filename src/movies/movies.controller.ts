@@ -41,7 +41,10 @@ export class MoviesController {
   @UsePipes(new ValidationPipe(CreateMovieSchema)) //Валидация
   @UseGuards(JwtAuthGuard)
   @Post('movies')
-  async addCard(@Body() card: CreateMovieDto, @Req() req: IIdUserRequest) {
+  async addCard(
+    @Body() card: CreateMovieDto,
+    @Req() req: IIdUserRequest,
+  ): Promise<IMovies> {
     return this.moviesService.addCard(card, req.user._id);
   }
 

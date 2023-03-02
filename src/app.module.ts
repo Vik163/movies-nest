@@ -11,6 +11,7 @@ import { PugAdapter } from '@nestjs-modules/mailer/dist/adapters/pug.adapter';
     MongooseModule.forRoot(process.env.BASE_DB_URL, {
       useNewUrlParser: true,
     }),
+    // Отправка по почте
     MailerModule.forRoot({
       transport: {
         host: process.env.SMTP_HOST,

@@ -54,28 +54,3 @@ export class CreateMovieDto {
   readonly nameEN: string;
   readonly movieId: number;
 }
-
-// export class CreateMovieDto {
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly country: string;
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly director: string;
-//   @IsNumber({}, { message: 'Должно быть числом' })
-//   readonly duration: number;
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly year: string;
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly description: string;
-//   @IsUrl({}, { message: 'Неправильный URL-адрес' })
-//   readonly image: string;
-//   @IsUrl({}, { message: 'Неправильный URL-адрес' })
-//   readonly trailerLink: string;
-//   @IsUrl({}, { message: 'Неправильный URL-адрес' })
-//   readonly thumbnail: string;
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly nameRU: string;
-//   @IsString({ message: 'Должно быть строкой' })
-//   readonly nameEN: string;
-//   @IsNumber({}, { message: 'Должно быть числом' })
-//   readonly movieId: number;
-// }
