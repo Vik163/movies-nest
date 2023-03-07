@@ -18,6 +18,11 @@ export class BadRequestFilter implements ExceptionFilter {
           .status(status)
           .json({ statusCode: status, message: 'Страница не найдена' });
       }
+      if (status == 401) {
+        return response
+          .status(status)
+          .json({ statusCode: status, message: 'Пользователь не авторизован' });
+      }
     }
     return response
       .status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -18,7 +18,7 @@ export class TokensService {
   createTokens(payload: IUser): ITokens {
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: '30m',
+      expiresIn: '15s',
     });
 
     const refreshToken = this.jwtService.sign(payload, {

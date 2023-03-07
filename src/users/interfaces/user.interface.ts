@@ -10,7 +10,7 @@ export interface IReqUserType {
   email: string;
 }
 
-export interface IIdUserRequest extends Request {
+export interface RequestWithIdUser extends Request {
   user: IReqUserType;
   id: object;
 }

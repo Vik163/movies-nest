@@ -6,11 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Response } from 'express';
 import * as bcrypt from 'bcrypt';
 
 import { User, UserDocument } from 'src/users/schemas/users.schema';
-import { ICreateUser, IUser } from './interfaces/auth.interface';
+import { INewUser, IUser, ResponseWithUser } from './interfaces/auth.interface';
 import { TokensService } from './tokens.service';
 
 @Injectable()
@@ -51,7 +50,10 @@ export class UtilsAuthService {
   }
 
   // Отправляем данные пользователя -------------------------
-  public async sendUserData(user: IUser, res: Response): Promise<ICreateUser> {
+  public async sendUserData(
+    user: IUser,
+    res: ResponseWithUser,
+  ): Promise<INewUser> {
     //- Создаем токены ---
     const tokens = this.tokenService.createTokens(user);
 

@@ -1,4 +1,5 @@
 import { Types } from 'mongoose';
+import { Request, Response } from 'express';
 
 export interface IUser {
   readonly name: string;
@@ -8,7 +9,7 @@ export interface IUser {
   readonly password?: string;
 }
 
-export interface ICreateUser {
+export interface INewUser {
   readonly accessToken: string;
   user: IUser;
 }
@@ -16,4 +17,12 @@ export interface ICreateUser {
 export interface ITokens {
   readonly accessToken: string;
   readonly refreshToken: string;
+}
+
+export interface RequestWithUser extends Request {
+  user: IUser;
+}
+
+export interface ResponseWithUser extends Response {
+  user: IUser;
 }

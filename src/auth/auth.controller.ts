@@ -9,12 +9,16 @@ import {
   UseFilters,
   Req,
 } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { CreateUserDto, CreateUserSchema } from 'src/auth/dto/create-user.dto';
 import { ValidationPipe } from 'src/pipes/validation.pipe';
 import { LoginUserDto, LoginUserSchema } from './dto/login-user.dto';
-import { ICreateUser } from './interfaces/auth.interface';
+import {
+  INewUser,
+  RequestWithUser,
+  ResponseWithUser,
+} from './interfaces/auth.interface';
 import { ErrorFilter } from 'src/filters/errors.filter';
 import { UtilsAuthService } from './utils-auth.service';
 
@@ -31,8 +35,8 @@ export default class AuthController {
   @Post('signup')
   async createUser(
     @Body() createUserDto: CreateUserDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<ICreateUser> {
+    @Res({ passthrough: true }) res: ResponseWithUser,
+  ): Promise<INewUser> {
     return this.authService.createUser(createUserDto, res);
   }
 
@@ -41,14 +45,14 @@ export default class AuthController {
   @UseFilters(new ErrorFilter())
   async login(
     @Body() loginUserDto: LoginUserDto,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<ICreateUser> {
+    @Res({ passthrough: true }) res: ResponseWithUser,
+  ): Promise<INewUser> {
     return this.authService.login(loginUserDto, res);
   }
 
   // Получение токенов с сервера -----------
   @Get('token')
-  async refresh(@Req() req: Request): Promise<ICreateUser> {
+  async refresh(@Req() req: RequestWithUser): Promise<INewUser> {
     return this.authService.refresh(req);
   }
 
@@ -65,7 +69,10 @@ export default class AuthController {
 
   @Get('logout')
   @UseFilters(new ErrorFilter())
-  async logout(@Res() res: Response, @Req() req: Request): Promise<void> {
+  async logout(
+    @Res() res: Response,
+    @Req() req: RequestWithUser,
+  ): Promise<void> {
     return this.authService.logout(res, req);
   }
 }

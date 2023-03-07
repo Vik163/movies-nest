@@ -15,3 +15,13 @@ export interface IMovies {
   readonly owner: User;
   readonly _id: string;
 }
+
+export interface IReqUserType {
+  _id: string;
+  email: string;
+}
+
+export interface RequestWithIdUser extends Request {
+  user: IReqUserType;
+  id: object;
+}

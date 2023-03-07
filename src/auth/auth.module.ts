@@ -23,7 +23,7 @@ const { NODE_ENV, JWT_SECRET } = process.env;
     forwardRef(() => UsersModule), // Убераем круговую зависимость
     JwtModule.register({
       secret: NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
-      signOptions: { expiresIn: '7d' },
+      // signOptions: { expiresIn: '7d' },
     }),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([{ name: Token.name, schema: TokenShema }]),

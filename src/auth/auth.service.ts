@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import * as uuid from 'uuid';
 
 import { User, UserDocument } from 'src/users/schemas/users.schema';
@@ -14,7 +14,12 @@ import { Model } from 'mongoose';
 import { CreateUserDto } from 'src/auth/dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { TokensService } from './tokens.service';
-import { ICreateUser, IUser } from './interfaces/auth.interface';
+import {
+  INewUser,
+  IUser,
+  RequestWithUser,
+  ResponseWithUser,
+} from './interfaces/auth.interface';
 import { MailService } from './mail.service';
 import { UtilsAuthService } from './utils-auth.service';
 
@@ -30,8 +35,8 @@ export class AuthService {
   // Регитрация =======================================================
   public async createUser(
     createUserDto: CreateUserDto,
-    res: Response,
-  ): Promise<ICreateUser> {
+    res: ResponseWithUser,
+  ): Promise<INewUser> {
     // - Проверяем на конфликт email ---
     const { email } = createUserDto;
     const candidate = await this.userModel.findOne({ email });
@@ -43,10 +48,10 @@ export class AuthService {
 
     // - Запрос аутентификации через почту яндекса ---
     const activationLink = uuid.v4(); // - ссылка для параметра ---
-    await this.mailService.sendActivationMail(
-      email,
-      `${process.env.API_URL}/activate/${activationLink}`,
-    );
+    // await this.mailService.sendActivationMail(
+    //   email,
+    //   `${process.env.API_URL}/activate/${activationLink}`,
+    // );
 
     // - Записываем пользователя в БД и получаем его ---
     const user: IUser = await new this.userModel({
@@ -66,7 +71,10 @@ export class AuthService {
   }
 
   // Аутентификация ======================================================
-  public async login(user: LoginUserDto, res: Response): Promise<ICreateUser> {
+  public async login(
+    user: LoginUserDto,
+    res: ResponseWithUser,
+  ): Promise<INewUser> {
     try {
       // - Проверяем данные пользователя ---
       const payload: IUser = await this.utilsAuthService.validateUser(
@@ -84,7 +92,7 @@ export class AuthService {
   }
 
   // Обновление токенов ===========================================
-  async refresh(req: Request): Promise<ICreateUser> {
+  async refresh(req: RequestWithUser): Promise<INewUser> {
     const { refreshToken } = req.cookies;
     if (!refreshToken) {
       throw new UnauthorizedException('Пользователь не авторизован');
@@ -104,12 +112,14 @@ export class AuthService {
       _id: user._id,
       isActivated: user.isActivated,
     };
+
     // - Создаем токены ---
     const tokens = await this.tokenService.createTokens(userPayload);
-    return { ...tokens, user: userPayload };
+    const accessToken = tokens.accessToken;
+    return { accessToken, user: userPayload };
   }
 
-  public async logout(res: Response, req: Request): Promise<void> {
+  public async logout(res: Response, req: RequestWithUser): Promise<void> {
     const { refreshToken } = req.cookies;
     const token = await this.tokenService.removeToken(refreshToken);
     res.clearCookie('refreshToken');
